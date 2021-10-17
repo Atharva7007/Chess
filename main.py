@@ -46,6 +46,11 @@ def main():
                     if board[mouse_y // 80][mouse_x // 80].color == turn_color[turn % 2]:
                         board[mouse_y // 80][mouse_x // 80].selected = True
                         prev_x, prev_y = mouse_x // 80, mouse_y // 80
+                        try:
+                            board[mouse_y // 80][mouse_x // 80].generate_possible_moves(prev_x, prev_y, board)
+                            print("INVOKED")
+                        except Exception as e:
+                            print(e)
             
             if event.type == pygame.MOUSEBUTTONUP:
                 # Do the following ony if a valid piece is being moved
@@ -55,6 +60,7 @@ def main():
                     if moving_piece.x == prev_x and moving_piece.y == prev_y:
                         board[mouse_y // 80][mouse_x // 80].selected = False
                     else:
+                        # Check if piece has moved to a valid cell
                         if moving_piece.move_is_valid(prev_x, prev_y, board):
                             # Replace the old cell of moving piece with a blank cell 
                             board[prev_y][prev_x] = "__"
@@ -71,6 +77,7 @@ def main():
                         else:
                             moving_piece.x, moving_piece.y = prev_x, prev_y
                             board[moving_piece.y][moving_piece.x].selected = False
+                            moving_piece = None
         
         # Drawing the board tiles first
         for i in range(0, WIDTH, 80):
