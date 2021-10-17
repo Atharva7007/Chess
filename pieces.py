@@ -3,7 +3,7 @@ pygame.init()
 
 class Piece:
     """
-    Parent class Piece contains the common attricbutes of all different pieces
+    Parent class Piece contains the attributes that are common for all pieces
     """
     def __init__(self, y, x, color):
         self.selected = False
@@ -11,6 +11,22 @@ class Piece:
         self.color = color
         self.WIDTH, self.HEIGHT = 80, 80
         self.has_moved = False
+        self.possible_moves = []
+    
+    def move_is_valid(self, prev_x, prev_y, board):
+        # Get current mouse position and convert to board indices
+        x, y = pygame.mouse.get_pos()
+        x, y = x // 80, y // 80
+
+        # Check if the move is valid
+        if (x, y) in self.possible_moves:
+            self.x, self.y = x, y
+            return True
+    
+    def move(self):
+        x, y = pygame.mouse.get_pos()
+        x, y = x - 40, y - 40
+        self.x, self.y = x / 80, y / 80
 
 class King(Piece):
     """
@@ -25,31 +41,20 @@ class King(Piece):
     def draw(self, board):
         board.blit(self.img, (self.x * 80, self.y * 80))
     
-    # Returns if move is valid
-    def move_is_valid(self, prev_x, prev_y, board):
-        # Get current mouse position and convert to board indices
-        x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
-
-        # Check if the move is valid
-        if abs(x - prev_x) <= 1 and abs(y - prev_y) <= 1:
-            # If piece hasnt moved then dont register it
-            if x == prev_x or y == prev_y:
-                return False
-            # If a piece exists at destination spot check
-            # if it is an enemy piece
-            elif isinstance(board[y][x], Piece):
-                if board[y][x].color != self.color or board[y][x] == self:
-                    self.x, self.y = x, y
-                    return True
-            else:
-                self.x, self.y = x, y
-                return True
-    
-    def move(self):
-        x, y = pygame.mouse.get_pos()
-        x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+    def generate_possible_moves(self, prev_x, prev_y, board):
+        self.possible_moves = []
+        
+        # Add possible moves King can move to
+        for x_pos in range(prev_x-1, prev_x+2):
+            for y_pos in range(prev_y-1, prev_y+2):
+                if x_pos >= 0 and x_pos <= 7: # Check if move is within board limits
+                    if y_pos >= 0 and y_pos <= 7: # Check if move is within board limits
+                        if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                            if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                                self.possible_moves.append((x_pos, y_pos))
+                        else: # Free cell
+                            self.possible_moves.append((x_pos, y_pos))
+        print(self.possible_moves)
 
 class Queen(Piece):
     """
@@ -64,29 +69,75 @@ class Queen(Piece):
     def draw(self, board):
         board.blit(self.img, (self.x * 80, self.y * 80))
     
-    def move_is_valid(self, prev_x, prev_y, board):
-        # Get current mouse position and convert to board indices
-        x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
+    def generate_possible_moves(self, prev_x, prev_y, board):
+        self.possible_moves = []
+        
+        # Add possible moves to the right of queen
+        for x_pos in range(prev_x+1, 8):
+            if isinstance(board[prev_y][x_pos], Piece):
+                if board[prev_y][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, prev_y))
+                break # Piece obstructs the path
+            self.possible_moves.append((x_pos, prev_y))
 
-        # Check if the move is valid 
-        if abs(x - prev_x) == abs(y - prev_y):
-            # Check if destination square has enemy piece
-            if x == prev_x or y == prev_y:
-                return False
-            elif isinstance(board[y][x], Piece):
-                if board[y][x].color != self.color or board[y][x] == self:
-                    self.x, self.y = x, y
-                    return True
-            # No movement
-            else:
-                self.x, self.y = x, y
-                return True
+        # Add possible moves to the left of queen
+        for x_pos in range(prev_x-1, -1, -1):
+            if isinstance(board[prev_y][x_pos], Piece):
+                if board[prev_y][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, prev_y))
+                break # Piece obstructs the path
+            self.possible_moves.append((x_pos, prev_y))
 
-    def move(self):
-        x, y = pygame.mouse.get_pos()
-        x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+        # Add possible moves below the queen
+        for y_pos in range(prev_y+1, 8):
+            if isinstance(board[y_pos][prev_x], Piece):
+                if board[y_pos][prev_x].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x, y_pos))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x, y_pos))
+        
+        # Add possible moves above the queen
+        for y_pos in range(prev_y-1, -1, -1):
+            if isinstance(board[y_pos][prev_x], Piece):
+                if board[y_pos][prev_x].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x, y_pos))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x, y_pos))    
+        
+        # Scan all diagonal cells top right
+        #print(prev_x, prev_y)
+        for i in range(1, min(8-prev_x, prev_y+1)):
+            if isinstance(board[prev_y-i][prev_x+i], Piece):
+                if board[prev_y-i][prev_x+i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x+i, prev_y-i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x+i, prev_y-i))
+        
+        # Scan all diagonal cells top left
+        for i in range(1, min(prev_x, prev_y)+1):
+            if isinstance(board[prev_y-i][prev_x-i], Piece):
+                if board[prev_y-i][prev_x-i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x-i, prev_y-i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x-i, prev_y-i))
+
+        # Scan all diagonal cells bottom left
+        for i in range(1, min(prev_x+1, 8-prev_y)):
+            if isinstance(board[prev_y+i][prev_x-i], Piece):
+                if board[prev_y+i][prev_x-i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x-i, prev_y+i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x-i, prev_y+i))
+
+        # Scan all diagonal cells bottom left
+        for i in range(1, min(8-prev_x, 8-prev_y)):
+            if isinstance(board[prev_y+i][prev_x+i], Piece):
+                if board[prev_y+i][prev_x+i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x+i, prev_y+i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x+i, prev_y+i))
+
+        #print(self.possible_moves)
 
 class Knight(Piece):
     """
@@ -100,38 +151,91 @@ class Knight(Piece):
     
     def draw(self, board):
         board.blit(self.img, (self.x * 80, self.y * 80))
-    
-    def move_is_valid(self, prev_x, prev_y, board):
-        # Get current mouse position and convert to board indices
-        x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
 
-        # Check if the move is valid
-        if abs(x - prev_x) == 2 and abs(y - prev_y) == 1:
-            if isinstance(board[y][x], Piece):
-                if board[y][x].color != self.color or board[y][x] == self:
-                    self.x, self.y = x, y
-                    return True
+    def generate_possible_moves(self, prev_x, prev_y, board):
+        self.possible_moves = []
+        
+        # Add possible moves Knight can move to
+        x_pos = prev_x + 2
+        y_pos = prev_y + 1
+        if x_pos < 8 and y_pos < 8:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
             else:
-                self.x, self.y = x, y
-                return True
-        elif abs(x - prev_x) == 1 and abs(y - prev_y) == 2:
-            if isinstance(board[y][x], Piece):
-                if board[y][x].color != self.color or board[y][x] == self:
-                    self.x, self.y = x, y
-                    return True
+                self.possible_moves.append((x_pos, y_pos))
+        
+        # Add possible moves Knight can move to
+        x_pos = prev_x + 1
+        y_pos = prev_y + 2
+        if x_pos < 8 and y_pos < 8:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
             else:
-                self.x, self.y = x, y
-                return True
-        # No movement
-        elif x == prev_x and y == prev_y:
-            self.x, self.y = x, y
-            return False
+                self.possible_moves.append((x_pos, y_pos))
+        
+        # Add possible moves Knight can move to
+        x_pos = prev_x - 1
+        y_pos = prev_y + 2
+        if x_pos >= 0 and y_pos < 8:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
+            else:
+                self.possible_moves.append((x_pos, y_pos))
+        
+        # Add possible moves Knight can move to
+        x_pos = prev_x + 2
+        y_pos = prev_y - 1
+        if x_pos < 8 and y_pos >= 0:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
+            else:
+                self.possible_moves.append((x_pos, y_pos))
 
-    def move(self):
-        x, y = pygame.mouse.get_pos()
-        x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+        # Add possible moves Knight can move to
+        x_pos = prev_x + 1
+        y_pos = prev_y - 2
+        if x_pos < 8 and y_pos >= 0:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
+            else:
+                self.possible_moves.append((x_pos, y_pos))
+
+        # Add possible moves Knight can move to
+        x_pos = prev_x - 2
+        y_pos = prev_y + 1
+        if x_pos >= 0 and y_pos < 8:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
+            else:
+                self.possible_moves.append((x_pos, y_pos))
+
+        # Add possible moves Knight can move to
+        x_pos = prev_x - 2
+        y_pos = prev_y - 1
+        if x_pos >= 0 and y_pos >= 0:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
+            else:
+                self.possible_moves.append((x_pos, y_pos))
+
+        # Add possible moves Knight can move to
+        x_pos = prev_x - 1
+        y_pos = prev_y - 2
+        if x_pos >= 0 and y_pos >= 0:
+            if isinstance(board[y_pos][x_pos], Piece): # Check if a piece exists in that square
+                if board[y_pos][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, y_pos))
+            else:
+                self.possible_moves.append((x_pos, y_pos))
+
+        print(self.possible_moves)
 
 class Bishop(Piece):
     """
@@ -146,28 +250,41 @@ class Bishop(Piece):
     def draw(self, board):
         board.blit(self.img, (self.x * 80, self.y * 80))
     
-    def move_is_valid(self, prev_x, prev_y, board):
-        # Get current mouse position and convert to board indices
-        x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
+    def generate_possible_moves(self, prev_x, prev_y, board):
+        self.possible_moves = []
+        
+        # Scan all diagonal cells top right
+        #print(prev_x, prev_y)
+        for i in range(1, min(8-prev_x, prev_y+1)):
+            if isinstance(board[prev_y-i][prev_x+i], Piece):
+                if board[prev_y-i][prev_x+i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x+i, prev_y-i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x+i, prev_y-i))
+        
+        # Scan all diagonal cells top left
+        for i in range(1, min(prev_x, prev_y)+1):
+            if isinstance(board[prev_y-i][prev_x-i], Piece):
+                if board[prev_y-i][prev_x-i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x-i, prev_y-i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x-i, prev_y-i))
 
-        # Check if the move is valid
-        if abs(x - prev_x) == abs(y - prev_y):
-            self.x, self.y = x, y
-            if x == prev_x or y == prev_y:
-                return False
-            elif isinstance(board[y][x], Piece):
-                if board[y][x].color != self.color or board[y][x] == self:
-                    self.x, self.y = x, y
-                    return True
-            else:
-                self.x, self.y = x, y
-                return True
-    
-    def move(self):
-        x, y = pygame.mouse.get_pos()
-        x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+        # Scan all diagonal cells bottom left
+        for i in range(1, min(prev_x+1, 8-prev_y)):
+            if isinstance(board[prev_y+i][prev_x-i], Piece):
+                if board[prev_y+i][prev_x-i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x-i, prev_y+i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x-i, prev_y+i))
+
+        # Scan all diagonal cells bottom left
+        for i in range(1, min(8-prev_x, 8-prev_y)):
+            if isinstance(board[prev_y+i][prev_x+i], Piece):
+                if board[prev_y+i][prev_x+i].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x+i, prev_y+i))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x+i, prev_y+i))
 
 class Rook(Piece):
     """
@@ -181,28 +298,41 @@ class Rook(Piece):
 
     def draw(self, board):
         board.blit(self.img, (self.x * 80, self.y * 80))
-    
-    def move_is_valid(self, prev_x, prev_y, board):
-        # Get current mouse position and convert to board indices
-        x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
 
-        # Check if the move is valid        
-        if x == prev_x or y == prev_y:
-            if x == prev_x and y == prev_y:
-                return False   
-            elif isinstance(board[y][x], Piece):
-                if board[y][x].color != self.color or board[y][x] == self:
-                    self.x, self.y = x, y
-                    return True         
-            else:
-                self.x, self.y = x, y
-                return True
+    def generate_possible_moves(self, prev_x, prev_y, board):
+        self.possible_moves = []
+        
+        # Add possible moves to the right of rook
+        for x_pos in range(prev_x+1, 8):
+            if isinstance(board[prev_y][x_pos], Piece):
+                if board[prev_y][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, prev_y))
+                break # Piece obstructs the path
+            self.possible_moves.append((x_pos, prev_y))
 
-    def move(self):
-        x, y = pygame.mouse.get_pos()
-        x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+        # Add possible moves to the left of rook
+        for x_pos in range(prev_x-1, -1, -1):
+            if isinstance(board[prev_y][x_pos], Piece):
+                if board[prev_y][x_pos].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((x_pos, prev_y))
+                break # Piece obstructs the path
+            self.possible_moves.append((x_pos, prev_y))
+
+        # Add possible moves below the rook
+        for y_pos in range(prev_y+1, 8):
+            if isinstance(board[y_pos][prev_x], Piece):
+                if board[y_pos][prev_x].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x, y_pos))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x, y_pos))
+        
+        # Add possible moves above the rook
+        for y_pos in range(prev_y-1, -1, -1):
+            if isinstance(board[y_pos][prev_x], Piece):
+                if board[y_pos][prev_x].color != self.color: # Possible move if piece is enemy piece
+                    self.possible_moves.append((prev_x, y_pos))
+                break # Piece obstructs the path
+            self.possible_moves.append((prev_x, y_pos))
 
 class Pawn(Piece):
     """
@@ -218,60 +348,50 @@ class Pawn(Piece):
     def draw(self, board):
         board.blit(self.img, (self.x * 80, self.y * 80))
     
-    def move_is_valid(self, prev_x, prev_y, board):
-        # Get current mouse position and convert to board indices
-        x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
-
+    def generate_possible_moves(self, prev_x, prev_y, board):
+        self.possible_moves = []
+        
         # Check if the move is valid
         if self.color == "b": # Logic for black pieces
+            # If pawn has moved then it can only move 1 square else it can also move 2 squares
             if self.has_moved:
-                if x == prev_x:
-                    # Pawn can move only one square
-                    if y - prev_y == 1:
-                        self.x, self.y = x, y
-                        return True 
-                # Pawns can kill diagonally
-                elif y - prev_y == 1 and abs(x - prev_x) == 1 and isinstance(board[y][x], Piece):
-                    if board[y][x].color == "w":
-                        self.x, self.y = x, y
-                        return True
-            else:
-                # Pawn can move one or two squares for the first move
-                if y - prev_y == 2 or y - prev_y == 1:
-                    if x == prev_x:
-                        self.x, self.y = x, y
-                        return True
-                    # Pawns can kill diagonally
-                    elif y - prev_y == 1 and abs(x - prev_x) == 1 and isinstance(board[y][x], Piece):
-                        if board[y][x].color == "w":
-                            self.x, self.y = x, y
-                            return True
-        elif self.color == "w":
-            if self.has_moved:
-                if x == prev_x:
-                    if y - prev_y == -1:
-                        self.x, self.y = x, y 
-                        return True   
-                # Pawn can kill diagonally on either side
-                elif y - prev_y == -1 and abs(x - prev_x) == 1 and isinstance(board[y][x], Piece):
-                    if board[y][x].color == "b":
-                        self.x, self.y = x, y
-                        return True
-            else:
-                # Pawn can move one or two squares for the first move
-                if y - prev_y == -1 or y - prev_y == -2:
-                    if x == prev_x:
-                        self.x, self.y = x, y
-                        return True
-                    # Pawn can kill diagonally
-                    elif y - prev_y == -1 and abs(x - prev_x) == 1 and isinstance(board[y][x], Piece):
-                        if board[y][x].color == "b":
-                            self.x, self.y = x, y  
-                            return True
-            return False
+                # If there is a piece in front of the pawn, it cannot go forward
+                if not isinstance(board[prev_y + 1][prev_x], Piece):
+                    self.possible_moves.append((prev_x, prev_y + 1))
 
-    def move(self):
-        x, y = pygame.mouse.get_pos()
-        x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+            else:
+                # Pawn hasnt moved so it can move 1 or 2 squares
+                if not isinstance(board[prev_y + 1][prev_x], Piece): # 1 square ahead
+                    self.possible_moves.append((prev_x, prev_y + 1))
+                if not isinstance(board[prev_y + 2][prev_x], Piece): # 2 squares ahead
+                    self.possible_moves.append((prev_x, prev_y + 2))
+                
+            # Pawns can kill diagonally
+            if isinstance(board[prev_y + 1][prev_x + 1], Piece):
+                if board[prev_y + 1][prev_x + 1].color == "w":
+                    self.possible_moves.append((prev_x + 1, prev_y + 1))
+            if isinstance(board[prev_y + 1][prev_x - 1], Piece):
+                if board[prev_y + 1][prev_x - 1].color == "w":
+                    self.possible_moves.append((prev_x - 1, prev_y + 1))
+
+        elif self.color == "w":
+            # If pawn has moved then it can only move 1 square else it can also move 2 squares
+            if self.has_moved:
+                # If there is a piece in front of the pawn, it cannot go forward
+                if not isinstance(board[prev_y - 1][prev_x], Piece):
+                    self.possible_moves.append((prev_x, prev_y - 1))
+
+            else:
+                # Pawn hasnt moved so it can move 1 or 2 squares
+                if not isinstance(board[prev_y - 1][prev_x], Piece): # 1 square ahead
+                    self.possible_moves.append((prev_x, prev_y - 1))
+                if not isinstance(board[prev_y - 2][prev_x], Piece): # 2 squares ahead
+                    self.possible_moves.append((prev_x, prev_y - 2))
+                
+            # Pawns can kill diagonally
+            if isinstance(board[prev_y - 1][prev_x + 1], Piece):
+                if board[prev_y - 1][prev_x + 1].color == "b":
+                    self.possible_moves.append((prev_x + 1, prev_y - 1))
+            if isinstance(board[prev_y - 1][prev_x - 1], Piece):
+                if board[prev_y - 1][prev_x - 1].color == "b":
+                    self.possible_moves.append((prev_x - 1, prev_y - 1))      
