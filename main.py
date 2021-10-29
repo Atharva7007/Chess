@@ -4,9 +4,13 @@ import pygame
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.init()
 
+# Colors in RGB
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BROWN = (210, 100, 25)
+
+# Height of the board = 8 * height of a single cell 
+WIDTH = HEIGHT = 8 * 80
 
 font = "Eight-Bit Madness.ttf"
 menu_font = pygame.font.Font(font, 70)
@@ -44,10 +48,15 @@ def menu(screen):
         pygame.display.update()
     return
 
-def main():
+def draw_board(screen):
+    for i in range(0, WIDTH, 80):
+        for j in range(0, HEIGHT, 80):
+            if ((i + j) / 80) % 2 == 0:
+                pygame.draw.rect(screen, WHITE, (i, j, 80, 80))
+            else:
+                pygame.draw.rect(screen, BROWN, (i, j, 80, 80))  
 
-    # Height of the board = 8 * height of a single cell 
-    WIDTH = HEIGHT = 8 * 80
+def main():
 
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Chess")
@@ -92,9 +101,9 @@ def main():
                         prev_x, prev_y = mouse_x // 80, mouse_y // 80
                         try:
                             board[mouse_y // 80][mouse_x // 80].generate_possible_moves(prev_x, prev_y, board)
-                            print("INVOKED")
                         except Exception as e:
-                            print(e)
+                            # For debugging
+                            print(e) 
             
             if event.type == pygame.MOUSEBUTTONUP:
                 # Do the following ony if a valid piece is being moved
@@ -124,12 +133,7 @@ def main():
                             moving_piece = None
         
         # Drawing the board tiles first
-        for i in range(0, WIDTH, 80):
-            for j in range(0, HEIGHT, 80):
-                if ((i + j) / 80) % 2 == 0:
-                    pygame.draw.rect(screen, WHITE, (i, j, 80, 80))
-                else:
-                    pygame.draw.rect(screen, BROWN, (i, j, 80, 80))   
+        draw_board(screen)
         
         # Drawing the pieces
         for row in board:
