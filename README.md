@@ -1,2 +1,2 @@
 # Chess
-Implementation of 2-player chess using the Python library Pygame
+Implementation of a 2-player chess game using the Python library Pygame
