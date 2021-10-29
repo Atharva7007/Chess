@@ -4,18 +4,68 @@ import pygame
 pygame.mixer.pre_init(44100, -16, 2, 2048)
 pygame.init()
 
-def menu():
+# Colors in RGB
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BROWN = (210, 100, 25)
+
+# Height of the board = 8 * height of a single cell 
+WIDTH = HEIGHT = 8 * 80
+
+font = "Eight-Bit Madness.ttf"
+menu_font = pygame.font.Font(font, 70)
+
+def menu(screen):
+    X, Y = 190, 230 # Coordinates of the chess logo
+    button_x, buttton_y = X + 60, Y + 150 # Co-ordinates of the play button
+    rect_big = pygame.Rect(X+50, Y+140, 150, 60) # Rect for outline rectangle of button in normal conditions
+    rect_small = pygame.Rect(X+55, Y+145, 140, 50) # Rect for outline rectangle of button when mouse hovers over it
+    border_width = 3
+    
+    title = pygame.image.load("Chess.png")
+    play_button = menu_font.render("Play", True, BLACK)
+    
+    while True:
+
+        # Event loop
+        for event in pygame.event.get():
+            # Close the window
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit(0)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.Rect.collidepoint(rect_big, event.pos):
+                    return
+        
+        screen.fill(WHITE)
+        screen.blit(title, (X, Y))
+        if pygame.Rect.collidepoint(rect_big, pygame.mouse.get_pos()):
+            pygame.draw.rect(screen, BLACK, rect_small, border_width)
+        else:
+            pygame.draw.rect(screen, BLACK, rect_big, border_width)
+        screen.blit(play_button, (button_x, buttton_y))
+
+        pygame.display.update()
     return
 
-def main():
-    BLACK = (0, 0, 0)
-    WHITE = (255, 255, 255)
-    BROWN = (210,100,25)
+def draw_board(screen):
+    for i in range(0, WIDTH, 80):
+        for j in range(0, HEIGHT, 80):
+            if ((i + j) / 80) % 2 == 0:
+                pygame.draw.rect(screen, WHITE, (i, j, 80, 80))
+            else:
+                pygame.draw.rect(screen, BROWN, (i, j, 80, 80))  
 
-    # Height of the board = 8 * height of a single cell 
-    WIDTH = HEIGHT = 8 * 80
+def main():
 
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Chess")
+    icon = pygame.image.load("chess_icon.ico")
+    pygame.display.set_icon(icon)
+    clock = pygame.time.Clock()
+    FPS = 120
+
+    menu(screen)
 
     piece_drop = pygame.mixer.Sound("piece_drop.wav")
     turn_color = ["w", "b"]
@@ -35,6 +85,9 @@ def main():
     moving_piece = None
 
     while True:
+        clock.tick(FPS)
+
+        # Event loop
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -48,9 +101,9 @@ def main():
                         prev_x, prev_y = mouse_x // 80, mouse_y // 80
                         try:
                             board[mouse_y // 80][mouse_x // 80].generate_possible_moves(prev_x, prev_y, board)
-                            print("INVOKED")
                         except Exception as e:
-                            print(e)
+                            # For debugging
+                            print(e) 
             
             if event.type == pygame.MOUSEBUTTONUP:
                 # Do the following ony if a valid piece is being moved
@@ -80,12 +133,7 @@ def main():
                             moving_piece = None
         
         # Drawing the board tiles first
-        for i in range(0, WIDTH, 80):
-            for j in range(0, HEIGHT, 80):
-                if ((i + j) / 80) % 2 == 0:
-                    pygame.draw.rect(screen, WHITE, (i, j, 80, 80))
-                else:
-                    pygame.draw.rect(screen, BROWN, (i, j, 80, 80))   
+        draw_board(screen)
         
         # Drawing the pieces
         for row in board:
