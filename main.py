@@ -9,14 +9,15 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BROWN = (210, 100, 25)
 
-# Height of the board = 8 * height of a single cell 
-WIDTH = HEIGHT = 8 * 80
+# Height of the board = 8 * height of a single cell
+CELL_DIM = 70
+WIDTH = HEIGHT = 8 * CELL_DIM
 
 font = "Eight-Bit Madness.ttf"
 menu_font = pygame.font.Font(font, 70)
 
 def menu(screen):
-    X, Y = 190, 230 # Coordinates of the chess logo
+    X, Y = 150, 210 # Coordinates of the chess logo
     button_x, buttton_y = X + 60, Y + 150 # Co-ordinates of the play button
     rect_big = pygame.Rect(X+50, Y+140, 150, 60) # Rect for outline rectangle of button in normal conditions
     rect_small = pygame.Rect(X+55, Y+145, 140, 50) # Rect for outline rectangle of button when mouse hovers over it
@@ -39,6 +40,7 @@ def menu(screen):
         
         screen.fill(WHITE)
         screen.blit(title, (X, Y))
+        
         if pygame.Rect.collidepoint(rect_big, pygame.mouse.get_pos()):
             pygame.draw.rect(screen, BLACK, rect_small, border_width)
         else:
@@ -46,15 +48,16 @@ def menu(screen):
         screen.blit(play_button, (button_x, buttton_y))
 
         pygame.display.update()
+    
     return
 
 def draw_board(screen):
-    for i in range(0, WIDTH, 80):
-        for j in range(0, HEIGHT, 80):
-            if ((i + j) / 80) % 2 == 0:
-                pygame.draw.rect(screen, WHITE, (i, j, 80, 80))
+    for i in range(0, WIDTH, CELL_DIM):
+        for j in range(0, HEIGHT, CELL_DIM):
+            if ((i + j) / CELL_DIM) % 2 == 0:
+                pygame.draw.rect(screen, WHITE, (i, j, CELL_DIM, CELL_DIM))
             else:
-                pygame.draw.rect(screen, BROWN, (i, j, 80, 80))  
+                pygame.draw.rect(screen, BROWN, (i, j, CELL_DIM, CELL_DIM))  
 
 def main():
 
@@ -95,12 +98,12 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 # Check if a piece  exists at that location
-                if isinstance(board[mouse_y // 80][mouse_x // 80], Piece):
-                    if board[mouse_y // 80][mouse_x // 80].color == turn_color[turn % 2]:
-                        board[mouse_y // 80][mouse_x // 80].selected = True
-                        prev_x, prev_y = mouse_x // 80, mouse_y // 80
+                if isinstance(board[mouse_y // CELL_DIM][mouse_x // CELL_DIM], Piece):
+                    if board[mouse_y // CELL_DIM][mouse_x // CELL_DIM].color == turn_color[turn % 2]:
+                        board[mouse_y // CELL_DIM][mouse_x // CELL_DIM].selected = True
+                        prev_x, prev_y = mouse_x // CELL_DIM, mouse_y // CELL_DIM
                         try:
-                            board[mouse_y // 80][mouse_x // 80].generate_possible_moves(prev_x, prev_y, board)
+                            board[mouse_y // CELL_DIM][mouse_x // CELL_DIM].generate_possible_moves(prev_x, prev_y, board)
                         except Exception as e:
                             # For debugging
                             print(e) 
@@ -111,7 +114,7 @@ def main():
                     
                     # If the position of the piece hasn't changed then don't count the move
                     if moving_piece.x == prev_x and moving_piece.y == prev_y:
-                        board[mouse_y // 80][mouse_x // 80].selected = False
+                        board[mouse_y // CELL_DIM][mouse_x // CELL_DIM].selected = False
                     else:
                         # Check if piece has moved to a valid cell
                         if moving_piece.move_is_valid(prev_x, prev_y, board):

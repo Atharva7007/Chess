@@ -1,6 +1,6 @@
 import pygame
 pygame.init()
-
+CELL_DIM = 70
 class Piece:
     """
     Parent class Piece contains the attributes that are common for all pieces
@@ -9,14 +9,14 @@ class Piece:
         self.selected = False
         self.x, self.y = x, y
         self.color = color
-        self.WIDTH, self.HEIGHT = 80, 80
+        self.WIDTH, self.HEIGHT = CELL_DIM, CELL_DIM
         self.has_moved = False
         self.possible_moves = []
     
     def move_is_valid(self, prev_x, prev_y, board):
         # Get current mouse position and convert to board indices
         x, y = pygame.mouse.get_pos()
-        x, y = x // 80, y // 80
+        x, y = x // CELL_DIM, y // CELL_DIM
 
         # Check if the move is valid
         if (x, y) in self.possible_moves:
@@ -26,7 +26,7 @@ class Piece:
     def move(self):
         x, y = pygame.mouse.get_pos()
         x, y = x - 40, y - 40
-        self.x, self.y = x / 80, y / 80
+        self.x, self.y = x / CELL_DIM, y / CELL_DIM
 
 class King(Piece):
     """
@@ -39,7 +39,7 @@ class King(Piece):
         self.img = pygame.transform.scale(self.img, (self.WIDTH, self.HEIGHT))
     
     def draw(self, board):
-        board.blit(self.img, (self.x * 80, self.y * 80))
+        board.blit(self.img, (self.x * CELL_DIM, self.y * CELL_DIM))
     
     def generate_possible_moves(self, prev_x, prev_y, board):
         self.possible_moves = []
@@ -67,7 +67,7 @@ class Queen(Piece):
         self.img = pygame.transform.scale(self.img, (self.WIDTH, self.HEIGHT))
     
     def draw(self, board):
-        board.blit(self.img, (self.x * 80, self.y * 80))
+        board.blit(self.img, (self.x * CELL_DIM, self.y * CELL_DIM))
     
     def generate_possible_moves(self, prev_x, prev_y, board):
         self.possible_moves = []
@@ -150,7 +150,7 @@ class Knight(Piece):
         self.img = pygame.transform.scale(self.img, (self.WIDTH, self.HEIGHT))
     
     def draw(self, board):
-        board.blit(self.img, (self.x * 80, self.y * 80))
+        board.blit(self.img, (self.x * CELL_DIM, self.y * CELL_DIM))
 
     def generate_possible_moves(self, prev_x, prev_y, board):
         self.possible_moves = []
@@ -248,7 +248,7 @@ class Bishop(Piece):
         self.img = pygame.transform.scale(self.img, (self.WIDTH, self.HEIGHT))
 
     def draw(self, board):
-        board.blit(self.img, (self.x * 80, self.y * 80))
+        board.blit(self.img, (self.x * CELL_DIM, self.y * CELL_DIM))
     
     def generate_possible_moves(self, prev_x, prev_y, board):
         self.possible_moves = []
@@ -297,7 +297,7 @@ class Rook(Piece):
         self.img = pygame.transform.scale(self.img, (self.WIDTH, self.HEIGHT))
 
     def draw(self, board):
-        board.blit(self.img, (self.x * 80, self.y * 80))
+        board.blit(self.img, (self.x * CELL_DIM, self.y * CELL_DIM))
 
     def generate_possible_moves(self, prev_x, prev_y, board):
         self.possible_moves = []
@@ -346,7 +346,7 @@ class Pawn(Piece):
         
 
     def draw(self, board):
-        board.blit(self.img, (self.x * 80, self.y * 80))
+        board.blit(self.img, (self.x * CELL_DIM, self.y * CELL_DIM))
     
     def generate_possible_moves(self, prev_x, prev_y, board):
         self.possible_moves = []
